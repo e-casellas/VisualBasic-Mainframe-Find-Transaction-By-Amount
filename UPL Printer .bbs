@@ -1,0 +1,93 @@
+Sub Main()
+
+	Dim override As String, UsrName As String, FPass As String, SPass As String, MyDate As String, Host As Object, button As Integer
+	Static FirstFileID As String
+	'FirstFileID = 0
+
+	Set Host = CreateObject("BZWhll.WhllObj")
+	Host.Connect("A")
+
+	MyDay = Day(Now)
+	If MyDay < 10 Then MyDay = "0" & MyDay
+	MyMonth = Month(Now)
+	If MyMonth < 10 Then MyMonth = "0" & MyMonth
+	MyYear = Right(Year(Now), 2)
+	MyDate = MyMonth & "-" & MyDay & "-" & MyYear
+
+Begin Dialog Dialog1 200, 200, 161, 65, "UPL1 Finder"
+	OptionGroup .Grp1
+	TextBox 25, 25, 65, 12, .Edit1
+	PushButton 100, 24, 50, 15, "Find"', btn1
+	Text 10, 10, 27, 7, "Amount:"
+End Dialog
+
+DlgBox:
+	Dim Dlg1 As Dialog1
+	button = Dialog( Dlg1 )
+	If button = 0 Then Exit Sub
+
+'************FindFirstFileID************'
+	Host.Focus
+	If FirstFileID <> 0 Then GoTo FindByAmount
+	Do While search <> MyDate
+		For i = 10 To 22 Step 1
+			Host.ReadScreen search, 8, i, 018
+			If search = MyDate Then Exit Do
+		Next
+		If search <> MyDate Then Host.SendKey "@E"
+		If search <> MyDate Then Host.WaitReady 10, 1
+	Loop
+	Position = Host.PSSearch(MyDate, 1)
+	FirstFileID = Host.PSGetText(11, Position - 12)
+
+'***********EndFindFirstFileID***********'
+
+'************FindByAmount************'
+FindByAmount:
+	Amount = Dlg1.Edit1
+	i = 10
+	Host.WriteScreen FirstFileID, 03, 011
+	Host.WaitReady 10, 1
+	Host.SendKey "@E"
+	Host.WaitReady 10, 1
+	Host.WriteScreen "CFI", 06, 043
+	Host.WaitReady 10, 1
+	Host.WriteScreen "X", i, 002
+	Host.WaitReady 10, 1
+	Host.SendKey "@E"
+	Host.WaitReady 10, 1
+	While txtsearch = 0
+		txtsearch = Host.PSSearch(Amount, 1)
+		If txtsearch <> 0 Then
+			Host.PrintScreen
+			Host.WaitReady 10, 1
+			Host.WriteScreen "BATB", 01, 007
+			Host.SendKey "@E"
+			Host.WaitReady 10, 1
+			Host.PrintScreen
+			Host.WaitReady 10, 1
+			Do While eobrws = 0
+				eobrws = Host.PSSearch("END OF BROWSE", 1)
+				If eobrws <> 0 Then Exit Do
+				Host.SendKey "@E"		
+				Host.WaitReady 10, 1
+				Host.PrintScreen
+			Loop
+			Host.WriteScreen "CFB ", 01, 007
+			Host.SendKey "@E"
+			Host.WaitReady 10, 1
+		Else
+			Host.WriteScreen "CFB ", 01, 007
+			Host.SendKey "@E"
+			Host.WaitReady 10, 1
+			Host.WriteScreen "CFI", 06, 043
+			Host.WriteScreen "X", i + 1, 002
+			Host.SendKey "@E"
+			Host.WaitReady 10, 1
+		End If
+	Wend
+txtsearch = 0 : eobrws = 0 : Amount = 0
+GoTo DlgBox
+'***********EndFindByAmount***********'
+
+End Sub
